@@ -178,14 +178,6 @@ export default function AIAdvisor({ result, cityName }: Props) {
               {advisory.suggestions.length > 0 && (
                 <Section title="Suggestions" color="var(--accent-green)" items={advisory.suggestions} />
               )}
-
-              <button
-                onClick={() => { setAdvisory(null); requestAdvice(); }}
-                className="text-xs hover:opacity-80 transition-opacity"
-                style={{ color: 'var(--accent-purple)' }}
-              >
-                Refresh analysis →
-              </button>
             </div>
           )}
         </div>
