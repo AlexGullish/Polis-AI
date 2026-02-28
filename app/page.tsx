@@ -122,10 +122,7 @@ export default function Home() {
             borderRight: '1px solid var(--border)',
           }}
         >
-          <div className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
-            <MapPin size={12} />
-            Policy Lab
-          </div>
+
           <PolicyPanel
             selectedPolicies={policies}
             onChange={p => {
