@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* ── Dark theme (default) ──────────────────────────────────────── */
 :root {
   --bg-base: #0a0a0a;
   --bg-panel: #171717;
@@ -16,6 +17,82 @@
   --accent-red: #ef4444;
   --accent-purple: #8b5cf6;
   --accent-orange: #f97316;
+  /* chart-specific */
+  --chart-grid: #21262d;
+  --chart-ref-line: #30363d;
+  --chart-tick: #8b949e;
+  --warning-bg: #2d1b1b;
+}
+
+/* Auto: follow system preference unless manually overridden */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg-base: #f4f1eb;
+    --bg-panel: #ebe7df;
+    --bg-card: #dedad0;
+    --bg-card-hover: #cec9bd;
+    --border: #ccc8be;
+    --border-subtle: #dedad0;
+    --text-primary: #1a1714;
+    --text-secondary: #5c574f;
+    --text-muted: #9b9690;
+    --accent-blue: #2563eb;
+    --accent-green: #059669;
+    --accent-yellow: #d97706;
+    --accent-red: #dc2626;
+    --accent-purple: #7c3aed;
+    --accent-orange: #ea580c;
+    --chart-grid: #d5d0c6;
+    --chart-ref-line: #b8b2a7;
+    --chart-tick: #7a746e;
+    --warning-bg: #fef2f2;
+  }
+}
+
+/* Manual dark override */
+[data-theme="dark"] {
+  --bg-base: #0a0a0a;
+  --bg-panel: #171717;
+  --bg-card: #262626;
+  --bg-card-hover: #404040;
+  --border: #262626;
+  --border-subtle: #171717;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --text-muted: #737373;
+  --accent-blue: #3b82f6;
+  --accent-green: #10b981;
+  --accent-yellow: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-purple: #8b5cf6;
+  --accent-orange: #f97316;
+  --chart-grid: #21262d;
+  --chart-ref-line: #30363d;
+  --chart-tick: #8b949e;
+  --warning-bg: #2d1b1b;
+}
+
+/* Manual light override */
+[data-theme="light"] {
+  --bg-base: #f4f1eb;
+  --bg-panel: #ebe7df;
+  --bg-card: #dedad0;
+  --bg-card-hover: #cec9bd;
+  --border: #ccc8be;
+  --border-subtle: #dedad0;
+  --text-primary: #1a1714;
+  --text-secondary: #5c574f;
+  --text-muted: #9b9690;
+  --accent-blue: #2563eb;
+  --accent-green: #059669;
+  --accent-yellow: #d97706;
+  --accent-red: #dc2626;
+  --accent-purple: #7c3aed;
+  --accent-orange: #ea580c;
+  --chart-grid: #d5d0c6;
+  --chart-ref-line: #b8b2a7;
+  --chart-tick: #7a746e;
+  --warning-bg: #fef2f2;
 }
 
 * {

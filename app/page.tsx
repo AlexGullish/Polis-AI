@@ -12,6 +12,7 @@ import Dashboard from '@/components/Dashboard';
 import PolicyPanel from '@/components/PolicyPanel';
 import SimulationGraph from '@/components/SimulationGraph';
 import AIAdvisor from '@/components/AIAdvisor';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const DEFAULT_CITY = CITIES.find(c => c.id === 'amsterdam')!;
 
@@ -128,6 +129,8 @@ export default function Home() {
 
         <div className="flex items-center gap-3">
           <CitySearch selectedCity={selectedCity} onSelect={handleCityChange} />
+
+          <ThemeToggle />
 
           <button
             onClick={handleReset}

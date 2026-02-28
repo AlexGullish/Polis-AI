@@ -201,15 +201,15 @@ export default function SimulationGraph({ userResult, aiResult }: Props) {
 
       <ResponsiveContainer width="100%" height={240}>
         <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#21262d" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
           <XAxis
             dataKey="year"
-            tick={{ fontSize: 11, fill: '#8b949e' }}
+            tick={{ fontSize: 11, fill: 'var(--chart-tick)' }}
             tickFormatter={v => (v === 0 ? 'Base' : `Y${v}`)}
           />
-          <YAxis tick={{ fontSize: 11, fill: '#8b949e' }} />
+          <YAxis tick={{ fontSize: 11, fill: 'var(--chart-tick)' }} />
           <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine x={0} stroke="#30363d" strokeDasharray="4 2" />
+          <ReferenceLine x={0} stroke="var(--chart-ref-line)" strokeDasharray="4 2" />
 
           {/* User scenario lines (solid) */}
           {currentSeries.map(s =>
@@ -257,9 +257,9 @@ export default function SimulationGraph({ userResult, aiResult }: Props) {
               key={i}
               className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
               style={{
-                background: '#2d1b1b',
+                background: 'var(--warning-bg)',
                 border: '1px solid var(--accent-red)',
-                color: '#f85149',
+                color: 'var(--accent-red)',
               }}
             >
               <AlertTriangle size={14} />

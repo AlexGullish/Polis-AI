@@ -172,7 +172,7 @@ export default function AIAdvisor({
         {scenarioError && (
           <div
             className="text-xs px-3 py-2 rounded-lg"
-            style={{ background: '#2d1b1b', color: 'var(--accent-red)', border: '1px solid var(--accent-red)' }}
+            style={{ background: 'var(--warning-bg)', color: 'var(--accent-red)', border: '1px solid var(--accent-red)' }}
           >
             {scenarioError}
           </div>
@@ -334,7 +334,7 @@ export default function AIAdvisor({
         {analysisError && (
           <div
             className="text-xs px-3 py-2 rounded-lg"
-            style={{ background: '#2d1b1b', color: 'var(--accent-red)', border: '1px solid var(--accent-red)' }}
+            style={{ background: 'var(--warning-bg)', color: 'var(--accent-red)', border: '1px solid var(--accent-red)' }}
           >
             {analysisError}
           </div>
