@@ -2,7 +2,7 @@
 // annualBudget in CityData is in USD billions.
 // Convert: budgetPerYear / 1000 gives USD billions for comparison.
 
-import { CityData, CompanyCache, PolicyConfig, PolicyDefinition, SimulationResult, SimulationYear } from './types';
+import { CityData, PolicyConfig, PolicyDefinition, SimulationResult, SimulationYear } from './types';
 import { calcAllScores } from './scoring';
 
 function clamp(value: number, min: number, max: number): number {
@@ -44,18 +44,16 @@ function buildYear(year: number, metrics: CityData): SimulationYear {
 /**
  * Run a multi-year simulation with budget-based, start/end year policy logic.
  *
- * @param baseCity     — baseline city snapshot
- * @param policies     — user-configured policy set
- * @param policyDefs   — full policy definitions (from POLICIES constant)
- * @param companyCache — optional cache of fetched companies; used for efficiency multipliers
- * @param years        — number of years to simulate (default 10)
- * @param label        — 'user' or 'ai' (for dual-scenario graph)
+ * @param baseCity   — baseline city snapshot
+ * @param policies   — user-configured policy set
+ * @param policyDefs — full policy definitions (from POLICIES constant)
+ * @param years      — number of years to simulate (default 10)
+ * @param label      — 'user' or 'ai' (for dual-scenario graph)
  */
 export function runSimulation(
   baseCity: CityData,
   policies: PolicyConfig[],
   policyDefs: PolicyDefinition[],
-  companyCache: CompanyCache,
   years: number = 10,
   label: 'user' | 'ai' = 'user'
 ): SimulationResult {
@@ -88,18 +86,11 @@ export function runSimulation(
         maxRatio
       );
 
-      // Company efficiency multiplier (default 1.0 if no company selected or not in cache)
-      const cacheKey = `${baseCity.id}-${config.id}`;
-      const cached = companyCache[cacheKey];
-      const companyEff = config.companyId && cached
-        ? (cached.companies.find(c => c.id === config.companyId)?.costEfficiency ?? 1.0)
-        : 1.0;
-
       // Apply scaled impact per year
       for (const [key, baseDelta] of Object.entries(def.baseImpact)) {
         const k = key as keyof CityData;
         if (typeof yearMetrics[k] === 'number' && typeof baseDelta === 'number') {
-          (yearMetrics[k] as number) += baseDelta * budgetRatio * companyEff;
+          (yearMetrics[k] as number) += baseDelta * budgetRatio;
         }
       }
     }

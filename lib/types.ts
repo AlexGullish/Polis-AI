@@ -64,28 +64,6 @@ export interface PolicyConfig {
   startYear: number; // 1-based; first year policy is active
   endYear: number; // inclusive; last year policy is active
   budgetPerYear: number; // USD millions per year
-  companyId?: string; // optional selected company id
-}
-
-// --- Company types ---
-
-export type RiskLevel = 'low' | 'medium' | 'high';
-
-export interface CompanyProfile {
-  id: string;
-  name: string;
-  costEfficiency: number; // multiplier on impact per dollar, 0.7–1.3
-  riskFactor: RiskLevel;
-  description: string;
-  isLocal: boolean;
-}
-
-export interface CompanyCache {
-  [cacheKey: string]: { // key = `${cityId}-${policyId}`
-    companies: CompanyProfile[];
-    fetchedAt: number; // Date.now()
-    loading?: boolean;
-  };
 }
 
 // --- AI Scenario types ---

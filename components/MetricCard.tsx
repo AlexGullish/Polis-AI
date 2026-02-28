@@ -1,7 +1,8 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { SCORE_FORMULAS } from '@/lib/scoring';
+import { SCORE_FORMULAS, PILLAR_SUBMETRICS } from '@/lib/scoring';
+import { CityData } from '@/lib/types';
 
 interface Props {
   label: string;
@@ -9,7 +10,9 @@ interface Props {
   icon: ReactNode;
   color: string;
   pillar?: 'sustainability' | 'governance' | 'fiscalStability' | 'publicApproval';
-  delta?: number; // change from baseline
+  delta?: number;
+  baseMetrics?: CityData;
+  finalMetrics?: CityData;
 }
 
 function ScoreRing({ score, color }: { score: number; color: string }) {
@@ -47,8 +50,10 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
   );
 }
 
-export default function MetricCard({ label, score, icon, color, pillar, delta }: Props) {
+export default function MetricCard({ label, score, icon, color, pillar, delta, baseMetrics, finalMetrics }: Props) {
   const formula = pillar ? SCORE_FORMULAS[pillar] : undefined;
+  const submetrics = pillar ? PILLAR_SUBMETRICS[pillar] : undefined;
+  const showLiveDeltas = !!(submetrics && baseMetrics && finalMetrics);
 
   return (
     <div
@@ -61,21 +66,51 @@ export default function MetricCard({ label, score, icon, color, pillar, delta }:
           <div className="text-xs font-medium mt-1" style={{ color: 'var(--text-secondary)' }}>
             {label}
           </div>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <ScoreRing score={score} color={color} />
           {delta !== undefined && delta !== 0 && (
             <span
-              className="text-xs font-semibold"
+              className="text-xs font-semibold mt-0.5 block"
               style={{ color: delta > 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}
             >
               {delta > 0 ? '+' : ''}{delta} pts
             </span>
           )}
         </div>
+        <ScoreRing score={score} color={color} />
       </div>
 
-      {formula && (
+      {/* Live sub-metric deltas when simulation is running */}
+      {showLiveDeltas && (
+        <div className="space-y-1.5 pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+          {submetrics!.map(sm => {
+            const baseVal = baseMetrics![sm.key] as number | undefined;
+            const finalVal = finalMetrics![sm.key] as number | undefined;
+            if (baseVal === undefined || finalVal === undefined) return null;
+
+            const d = finalVal - baseVal;
+            const roundedD = Math.round(d * 10) / 10;
+            const isGood = sm.invert ? d < 0 : d > 0;
+            const isBad = sm.invert ? d > 0 : d < 0;
+            const deltaColor = isGood
+              ? 'var(--accent-green)'
+              : isBad
+                ? 'var(--accent-red)'
+                : 'var(--text-muted)';
+            const sign = roundedD > 0 ? '+' : '';
+
+            return (
+              <div key={sm.key} className="flex items-center justify-between text-xs">
+                <span style={{ color: 'var(--text-muted)' }}>{sm.label}</span>
+                <span className="font-semibold tabular-nums" style={{ color: deltaColor }}>
+                  {roundedD === 0 ? '—' : `${sign}${roundedD} ${sm.unit}`}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Static formula weights when no simulation */}
+      {!showLiveDeltas && formula && (
         <div className="space-y-1">
           {formula.map(f => (
             <div key={f.label} className="flex items-center justify-between text-xs">

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { MapPin, Play, RotateCcw, Map, Activity, Sparkles } from 'lucide-react';
-import { CityData, CompanyCache, CompanyProfile, PolicyConfig } from '@/lib/types';
+import { CityData, PolicyConfig } from '@/lib/types';
 import { calcAllScores } from '@/lib/scoring';
 import { runSimulation } from '@/lib/simulation';
 import { POLICIES } from '@/lib/policies';
@@ -26,9 +26,6 @@ export default function Home() {
   const [simulationYears, setSimulationYears] = useState(5);
   const [simulated, setSimulated] = useState(false);
 
-  // Company cache (cleared on city change)
-  const [companyCache, setCompanyCache] = useState<CompanyCache>({});
-
   // AI scenario state
   const [aiPolicies, setAiPolicies] = useState<PolicyConfig[] | null>(null);
 
@@ -36,20 +33,19 @@ export default function Home() {
 
   const userResult = useMemo(() => {
     if (!simulated || userPolicies.length === 0) return null;
-    return runSimulation(selectedCity, userPolicies, POLICIES, companyCache, simulationYears, 'user');
-  }, [simulated, selectedCity, userPolicies, simulationYears, companyCache]);
+    return runSimulation(selectedCity, userPolicies, POLICIES, simulationYears, 'user');
+  }, [simulated, selectedCity, userPolicies, simulationYears]);
 
   const aiResult = useMemo(() => {
     if (!aiPolicies || aiPolicies.length === 0) return null;
-    return runSimulation(selectedCity, aiPolicies, POLICIES, companyCache, simulationYears, 'ai');
-  }, [selectedCity, aiPolicies, simulationYears, companyCache]);
+    return runSimulation(selectedCity, aiPolicies, POLICIES, simulationYears, 'ai');
+  }, [selectedCity, aiPolicies, simulationYears]);
 
   function handleCityChange(city: CityData) {
     setSelectedCity(city);
     setUserPolicies([]);
     setAiPolicies(null);
     setSimulated(false);
-    setCompanyCache({});
     setCityLastRefreshed(null);
   }
 
@@ -85,13 +81,6 @@ export default function Home() {
     } finally {
       setIsRefreshingCity(false);
     }
-  }
-
-  function handleCompanyFetch(cacheKey: string, companies: CompanyProfile[], loading?: boolean) {
-    setCompanyCache(prev => ({
-      ...prev,
-      [cacheKey]: { companies, fetchedAt: Date.now(), loading: loading ?? false },
-    }));
   }
 
   function handleAdoptAIScenario(policies: PolicyConfig[]) {
@@ -182,13 +171,9 @@ export default function Home() {
           <PolicyPanel
             selectedPolicies={userPolicies}
             onChange={handlePoliciesChange}
-            cityId={selectedCity.id}
-            cityName={selectedCity.name}
             annualBudgetB={selectedCity.annualBudget}
             simulationYears={simulationYears}
             onYearsChange={setSimulationYears}
-            companyCache={companyCache}
-            onCompanyFetch={handleCompanyFetch}
           />
         </aside>
 

@@ -3,21 +3,17 @@
 import { useState } from 'react';
 import {
   Zap, Train, Landmark, Home, Heart, BookOpen, Wifi, Briefcase, Wheat, Factory,
-  Plus, X, ChevronDown, Loader2,
+  Plus, X,
 } from 'lucide-react';
 import { POLICIES, POLICY_CATEGORIES, CATEGORY_LABELS } from '@/lib/policies';
-import { CompanyCache, CompanyProfile, PolicyCategory, PolicyConfig, PolicyDefinition } from '@/lib/types';
+import { PolicyCategory, PolicyConfig, PolicyDefinition } from '@/lib/types';
 
 interface Props {
   selectedPolicies: PolicyConfig[];
   onChange: (policies: PolicyConfig[]) => void;
-  cityId: string;
-  cityName: string;
   annualBudgetB: number; // city annual budget in USD billions
   simulationYears: number;
   onYearsChange: (years: number) => void;
-  companyCache: CompanyCache;
-  onCompanyFetch: (cacheKey: string, companies: CompanyProfile[], loading?: boolean) => void;
 }
 
 const CATEGORY_ICONS: Record<PolicyCategory, React.ReactNode> = {
@@ -64,179 +60,22 @@ function formatBudget(m: number): string {
   return `$${Math.round(m)}M`;
 }
 
-function RiskBadge({ risk }: { risk: 'low' | 'medium' | 'high' }) {
-  const colors = {
-    low: { bg: 'rgba(34,197,94,0.15)', text: 'var(--accent-green)' },
-    medium: { bg: 'rgba(245,158,11,0.15)', text: 'var(--accent-yellow)' },
-    high: { bg: 'rgba(239,68,68,0.15)', text: 'var(--accent-red)' },
-  };
-  const c = colors[risk];
-  return (
-    <span
-      className="text-xs px-1.5 py-0.5 rounded-full font-medium"
-      style={{ background: c.bg, color: c.text }}
-    >
-      {risk}
-    </span>
-  );
-}
-
-function CompanySelector({
-  policyId,
-  policyName,
-  category,
-  cityId,
-  cityName,
-  selectedCompanyId,
-  companyCache,
-  catColor,
-  onSelect,
-  onFetch,
-}: {
-  policyId: string;
-  policyName: string;
-  category: PolicyCategory;
-  cityId: string;
-  cityName: string;
-  selectedCompanyId?: string;
-  companyCache: CompanyCache;
-  catColor: string;
-  onSelect: (companyId: string | undefined) => void;
-  onFetch: (cacheKey: string, companies: CompanyProfile[], loading?: boolean) => void;
-}) {
-  const cacheKey = `${cityId}-${policyId}`;
-  const cached = companyCache[cacheKey];
-  const isLoading = cached?.loading;
-  const companies = cached?.companies;
-
-  async function loadCompanies() {
-    onFetch(cacheKey, [], true); // signal loading
-    try {
-      const res = await fetch('/api/companies', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cityId, cityName, policyId, policyName, category }),
-      });
-      const { companies: fetched } = await res.json();
-      onFetch(cacheKey, fetched ?? []);
-    } catch {
-      onFetch(cacheKey, []);
-    }
-  }
-
-  const selected = companies?.find(c => c.id === selectedCompanyId);
-
-  return (
-    <div>
-      <div className="text-xs mb-1.5 flex items-center justify-between" style={{ color: 'var(--text-secondary)' }}>
-        <span>Contractor</span>
-        {selected && (
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            ×{selected.costEfficiency.toFixed(2)} efficiency
-          </span>
-        )}
-      </div>
-
-      {!companies && !isLoading && (
-        <button
-          onClick={loadCompanies}
-          className="w-full text-xs py-1.5 rounded flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
-          style={{
-            background: 'var(--bg-base)',
-            border: `1px dashed ${catColor}`,
-            color: catColor,
-          }}
-        >
-          <ChevronDown size={12} />
-          Load contractors for {cityName}
-        </button>
-      )}
-
-      {isLoading && (
-        <div className="flex items-center gap-2 text-xs py-1.5" style={{ color: 'var(--text-muted)' }}>
-          <Loader2 size={12} className="animate-spin" />
-          Fetching live contractor data…
-        </div>
-      )}
-
-      {companies && !isLoading && (
-        <div className="space-y-1">
-          {/* None option */}
-          <button
-            onClick={() => onSelect(undefined)}
-            className="w-full text-left text-xs px-2 py-1.5 rounded transition-all"
-            style={{
-              background: !selectedCompanyId ? CATEGORY_BG[category] : 'var(--bg-base)',
-              border: `1px solid ${!selectedCompanyId ? catColor : 'var(--border)'}`,
-              color: !selectedCompanyId ? catColor : 'var(--text-secondary)',
-            }}
-          >
-            None (default efficiency)
-          </button>
-          {companies.map(c => (
-            <button
-              key={c.id}
-              onClick={() => onSelect(c.id)}
-              className="w-full text-left text-xs px-2 py-1.5 rounded transition-all"
-              style={{
-                background: selectedCompanyId === c.id ? CATEGORY_BG[category] : 'var(--bg-base)',
-                border: `1px solid ${selectedCompanyId === c.id ? catColor : 'var(--border)'}`,
-              }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span
-                  className="font-medium truncate"
-                  style={{ color: selectedCompanyId === c.id ? catColor : 'var(--text-primary)' }}
-                >
-                  {c.name}
-                  {c.isLocal && (
-                    <span className="ml-1 text-xs" style={{ color: 'var(--text-muted)' }}>local</span>
-                  )}
-                </span>
-                <div className="flex items-center gap-1 shrink-0">
-                  <RiskBadge risk={c.riskFactor} />
-                  <span className="text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                    ×{c.costEfficiency.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-              {c.description && (
-                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
-                  {c.description}
-                </p>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function PolicyCard({
   policy,
   config,
   annualBudgetB,
   simulationYears,
-  cityId,
-  cityName,
-  companyCache,
   onAdd,
   onRemove,
   onUpdate,
-  onCompanyFetch,
 }: {
   policy: PolicyDefinition;
   config?: PolicyConfig;
   annualBudgetB: number;
   simulationYears: number;
-  cityId: string;
-  cityName: string;
-  companyCache: CompanyCache;
   onAdd: () => void;
   onRemove: () => void;
   onUpdate: (c: Partial<PolicyConfig>) => void;
-  onCompanyFetch: (cacheKey: string, companies: CompanyProfile[], loading?: boolean) => void;
 }) {
   const isSelected = !!config;
   const catColor = CATEGORY_COLORS[policy.category];
@@ -385,19 +224,6 @@ function PolicyCard({
             </div>
           </div>
 
-          {/* Company selector */}
-          <CompanySelector
-            policyId={policy.id}
-            policyName={policy.name}
-            category={policy.category}
-            cityId={cityId}
-            cityName={cityName}
-            selectedCompanyId={config.companyId}
-            companyCache={companyCache}
-            catColor={catColor}
-            onSelect={companyId => onUpdate({ companyId })}
-            onFetch={onCompanyFetch}
-          />
         </div>
       )}
     </div>
@@ -407,13 +233,9 @@ function PolicyCard({
 export default function PolicyPanel({
   selectedPolicies,
   onChange,
-  cityId,
-  cityName,
   annualBudgetB,
   simulationYears,
   onYearsChange,
-  companyCache,
-  onCompanyFetch,
 }: Props) {
   const [activeCategory, setActiveCategory] = useState<PolicyCategory>('energy');
 
@@ -516,13 +338,9 @@ export default function PolicyPanel({
               config={config}
               annualBudgetB={annualBudgetB}
               simulationYears={simulationYears}
-              cityId={cityId}
-              cityName={cityName}
-              companyCache={companyCache}
               onAdd={() => addPolicy(policy.id)}
               onRemove={() => removePolicy(policy.id)}
               onUpdate={patch => updatePolicy(policy.id, patch)}
-              onCompanyFetch={onCompanyFetch}
             />
           );
         })}

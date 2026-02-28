@@ -50,7 +50,9 @@ function formatTimeAgo(ts: number): string {
 }
 
 export default function Dashboard({ city, scores, result, onRefreshCityData, isRefreshing, lastRefreshed }: Props) {
-  const finalScores = result?.projections[result.projections.length - 1]?.scores;
+  const finalYear = result?.projections[result.projections.length - 1];
+  const finalScores = finalYear?.scores;
+  const finalMetrics = finalYear?.metrics;
 
   function delta(key: keyof PillarScores): number | undefined {
     if (!finalScores) return undefined;
@@ -112,6 +114,8 @@ export default function Dashboard({ city, scores, result, onRefreshCityData, isR
           color="var(--accent-green)"
           pillar="sustainability"
           delta={delta('sustainability')}
+          baseMetrics={city}
+          finalMetrics={finalMetrics}
         />
         <MetricCard
           label="Governance"
@@ -120,6 +124,8 @@ export default function Dashboard({ city, scores, result, onRefreshCityData, isR
           color="var(--accent-purple)"
           pillar="governance"
           delta={delta('governance')}
+          baseMetrics={city}
+          finalMetrics={finalMetrics}
         />
         <MetricCard
           label="Fiscal Stability"
@@ -128,6 +134,8 @@ export default function Dashboard({ city, scores, result, onRefreshCityData, isR
           color="var(--accent-yellow)"
           pillar="fiscalStability"
           delta={delta('fiscalStability')}
+          baseMetrics={city}
+          finalMetrics={finalMetrics}
         />
         <MetricCard
           label="Public Approval"
@@ -136,6 +144,8 @@ export default function Dashboard({ city, scores, result, onRefreshCityData, isR
           color="var(--accent-blue)"
           pillar="publicApproval"
           delta={delta('publicApproval')}
+          baseMetrics={city}
+          finalMetrics={finalMetrics}
         />
       </div>
 

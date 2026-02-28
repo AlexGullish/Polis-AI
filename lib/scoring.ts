@@ -74,6 +74,38 @@ export function calcAllScores(city: CityData): PillarScores {
   };
 }
 
+export const PILLAR_SUBMETRICS: Record<keyof PillarScores, Array<{
+  key: keyof CityData;
+  label: string;
+  unit: string;
+  invert: boolean; // true = lower is better (green when delta < 0)
+}>> = {
+  sustainability: [
+    { key: 'co2PerCapita',        label: 'CO₂/capita',    unit: 't/yr',  invert: true  },
+    { key: 'renewableEnergy',     label: 'Renewable',     unit: '%',     invert: false },
+    { key: 'publicTransit',       label: 'Transit',       unit: '%',     invert: false },
+    { key: 'airQuality',          label: 'Air Quality',   unit: 'AQI',   invert: true  },
+    { key: 'greenInvestment',     label: 'Green Invest',  unit: '%',     invert: false },
+  ],
+  governance: [
+    { key: 'crimeRate',                label: 'Crime Rate',    unit: '/100k',  invert: true  },
+    { key: 'publicTrust',              label: 'Public Trust',  unit: '/100',   invert: false },
+    { key: 'infrastructureInvestment', label: 'Infra. Invest', unit: '%',      invert: false },
+    { key: 'debtRatio',                label: 'Debt Ratio',    unit: '% GDP',  invert: true  },
+    { key: 'greenInvestment',          label: 'Transparency',  unit: '%',      invert: false },
+  ],
+  fiscalStability: [
+    { key: 'debtRatio',                label: 'Debt Ratio',    unit: '% GDP',  invert: true  },
+    { key: 'infrastructureInvestment', label: 'Infra. Invest', unit: '%',      invert: false },
+  ],
+  publicApproval: [
+    { key: 'publicTrust',   label: 'Public Trust', unit: '/100',  invert: false },
+    { key: 'crimeRate',     label: 'Crime Rate',   unit: '/100k', invert: true  },
+    { key: 'airQuality',    label: 'Air Quality',  unit: 'AQI',   invert: true  },
+    { key: 'publicTransit', label: 'Transit',      unit: '%',     invert: false },
+  ],
+};
+
 export const SCORE_FORMULAS = {
   sustainability: [
     { label: 'CO₂ per capita (inverted)', weight: '30%' },
