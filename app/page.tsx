@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { MapPin, Play, RotateCcw, Map, Activity, Sparkles } from 'lucide-react';
-import { CityData, PolicyConfig } from '@/lib/types';
+import { CityData, CompanyCache, CompanyProfile, PolicyConfig } from '@/lib/types';
 import { calcAllScores } from '@/lib/scoring';
 import { runSimulation } from '@/lib/simulation';
+import { POLICIES } from '@/lib/policies';
 import { CITIES } from '@/lib/cities';
 import CitySearch from '@/components/CitySearch';
 import Dashboard from '@/components/Dashboard';
@@ -15,40 +16,96 @@ import AIAdvisor from '@/components/AIAdvisor';
 const DEFAULT_CITY = CITIES.find(c => c.id === 'amsterdam')!;
 
 export default function Home() {
+  // City state
   const [selectedCity, setSelectedCity] = useState<CityData>(DEFAULT_CITY);
-  const [policies, setPolicies] = useState<PolicyConfig[]>([]);
+  const [isRefreshingCity, setIsRefreshingCity] = useState(false);
+  const [cityLastRefreshed, setCityLastRefreshed] = useState<number | null>(null);
+
+  // Policy + simulation state
+  const [userPolicies, setUserPolicies] = useState<PolicyConfig[]>([]);
   const [simulationYears, setSimulationYears] = useState(5);
   const [simulated, setSimulated] = useState(false);
 
+  // Company cache (cleared on city change)
+  const [companyCache, setCompanyCache] = useState<CompanyCache>({});
+
+  // AI scenario state
+  const [aiPolicies, setAiPolicies] = useState<PolicyConfig[] | null>(null);
+
   const baseScores = useMemo(() => calcAllScores(selectedCity), [selectedCity]);
 
-  const simulationResult = useMemo(() => {
-    if (!simulated || policies.length === 0) return null;
-    return runSimulation(selectedCity, policies, simulationYears);
-  }, [simulated, selectedCity, policies, simulationYears]);
+  const userResult = useMemo(() => {
+    if (!simulated || userPolicies.length === 0) return null;
+    return runSimulation(selectedCity, userPolicies, POLICIES, companyCache, simulationYears, 'user');
+  }, [simulated, selectedCity, userPolicies, simulationYears, companyCache]);
 
-  // Auto-simulate on policy/year change after first run
-  useEffect(() => {
-    if (simulated && policies.length > 0) {
-      // result recalculates via useMemo
-    }
-  }, [policies, simulated]);
+  const aiResult = useMemo(() => {
+    if (!aiPolicies || aiPolicies.length === 0) return null;
+    return runSimulation(selectedCity, aiPolicies, POLICIES, companyCache, simulationYears, 'ai');
+  }, [selectedCity, aiPolicies, simulationYears, companyCache]);
 
   function handleCityChange(city: CityData) {
     setSelectedCity(city);
-    setPolicies([]);
+    setUserPolicies([]);
+    setAiPolicies(null);
     setSimulated(false);
+    setCompanyCache({});
+    setCityLastRefreshed(null);
   }
 
   function handleSimulate() {
-    if (policies.length === 0) return;
+    if (userPolicies.length === 0) return;
     setSimulated(true);
   }
 
   function handleReset() {
-    setPolicies([]);
+    setUserPolicies([]);
+    setAiPolicies(null);
     setSimulated(false);
   }
+
+  async function handleRefreshCityData() {
+    setIsRefreshingCity(true);
+    try {
+      const res = await fetch('/api/city-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cityId: selectedCity.id,
+          cityName: selectedCity.name,
+          country: selectedCity.country,
+          currentData: selectedCity,
+        }),
+      });
+      const { data, lastRefreshed } = await res.json();
+      setSelectedCity(prev => ({ ...prev, ...data }));
+      setCityLastRefreshed(lastRefreshed);
+    } catch (e) {
+      console.error('City refresh failed:', e);
+    } finally {
+      setIsRefreshingCity(false);
+    }
+  }
+
+  function handleCompanyFetch(cacheKey: string, companies: CompanyProfile[], loading?: boolean) {
+    setCompanyCache(prev => ({
+      ...prev,
+      [cacheKey]: { companies, fetchedAt: Date.now(), loading: loading ?? false },
+    }));
+  }
+
+  function handleAdoptAIScenario(policies: PolicyConfig[]) {
+    setUserPolicies(policies);
+    setAiPolicies(null);
+    setSimulated(true);
+  }
+
+  function handlePoliciesChange(p: PolicyConfig[]) {
+    setUserPolicies(p);
+    if (p.length === 0) setSimulated(false);
+  }
+
+  const showGraph = userResult || aiResult;
 
   return (
     <div
@@ -65,7 +122,7 @@ export default function Home() {
       >
         <div className="flex items-center gap-3">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--accent-blue)', color: '#fff' }}
           >
             <Map size={18} />
@@ -98,10 +155,10 @@ export default function Home() {
 
           <button
             onClick={handleSimulate}
-            disabled={policies.length === 0}
+            disabled={userPolicies.length === 0}
             className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg transition-all disabled:opacity-40"
             style={{
-              background: policies.length > 0 ? 'var(--accent-green)' : 'var(--bg-card)',
+              background: userPolicies.length > 0 ? 'var(--accent-green)' : 'var(--bg-card)',
               color: '#fff',
               border: '1px solid transparent',
             }}
@@ -116,30 +173,42 @@ export default function Home() {
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left: Policy panel */}
         <aside
-          className="w-72 shrink-0 flex flex-col p-4 overflow-y-auto"
+          className="w-80 shrink-0 flex flex-col p-4"
           style={{
             background: 'var(--bg-panel)',
             borderRight: '1px solid var(--border)',
           }}
         >
-
           <PolicyPanel
-            selectedPolicies={policies}
-            onChange={p => {
-              setPolicies(p);
-              if (p.length === 0) setSimulated(false);
-              else if (simulated) setSimulated(true);
-            }}
+            selectedPolicies={userPolicies}
+            onChange={handlePoliciesChange}
+            cityId={selectedCity.id}
+            cityName={selectedCity.name}
+            annualBudgetB={selectedCity.annualBudget}
             simulationYears={simulationYears}
             onYearsChange={setSimulationYears}
+            companyCache={companyCache}
+            onCompanyFetch={handleCompanyFetch}
           />
         </aside>
 
         {/* Center: Dashboard + Graph */}
         <main className="flex-1 flex flex-col gap-4 p-4 overflow-y-auto min-w-0">
-          <Dashboard city={selectedCity} scores={baseScores} result={simulationResult} />
-          {simulationResult && <SimulationGraph result={simulationResult} />}
-          {!simulationResult && (
+          <Dashboard
+            city={selectedCity}
+            scores={baseScores}
+            result={userResult}
+            onRefreshCityData={handleRefreshCityData}
+            isRefreshing={isRefreshingCity}
+            lastRefreshed={cityLastRefreshed}
+          />
+          {showGraph && (
+            <SimulationGraph
+              userResult={userResult ?? aiResult!}
+              aiResult={userResult ? aiResult : null}
+            />
+          )}
+          {!showGraph && (
             <div
               className="rounded-xl flex flex-col items-center justify-center py-16 text-center"
               style={{ background: 'var(--bg-card)', border: '1px dashed var(--border)' }}
@@ -153,6 +222,7 @@ export default function Home() {
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 Select policies on the left, then click{' '}
                 <span style={{ color: 'var(--accent-green)' }}>Simulate</span>
+                , or use the AI Goal Planner on the right.
               </div>
             </div>
           )}
@@ -160,7 +230,7 @@ export default function Home() {
 
         {/* Right: AI Advisor */}
         <aside
-          className="w-72 shrink-0 p-4 overflow-y-auto"
+          className="w-80 shrink-0 p-4 overflow-y-auto"
           style={{
             background: 'var(--bg-panel)',
             borderLeft: '1px solid var(--border)',
@@ -170,7 +240,15 @@ export default function Home() {
             <Sparkles size={12} />
             AI Advisor
           </div>
-          <AIAdvisor result={simulationResult} cityName={selectedCity.name} />
+          <AIAdvisor
+            userResult={userResult}
+            aiResult={aiResult}
+            cityName={selectedCity.name}
+            cityId={selectedCity.id}
+            simulationYears={simulationYears}
+            currentData={selectedCity}
+            onAdoptAIScenario={handleAdoptAIScenario}
+          />
         </aside>
       </div>
 
@@ -184,16 +262,21 @@ export default function Home() {
         }}
       >
         <span>
-          City: <span style={{ color: 'var(--text-secondary)' }}>{selectedCity.name}, {selectedCity.country}</span>
+          <MapPin size={10} className="inline mr-1" />
+          <span style={{ color: 'var(--text-secondary)' }}>{selectedCity.name}, {selectedCity.country}</span>
           {' · '}
-          Policies active:{' '}
-          <span style={{ color: policies.length > 0 ? 'var(--accent-green)' : 'var(--text-muted)' }}>
-            {policies.length}
+          Policies:{' '}
+          <span style={{ color: userPolicies.length > 0 ? 'var(--accent-green)' : 'var(--text-muted)' }}>
+            {userPolicies.length}
           </span>
+          {aiPolicies && (
+            <>
+              {' · '}
+              <span style={{ color: 'var(--accent-purple)' }}>AI scenario active</span>
+            </>
+          )}
         </span>
-        <span>
-          Polis AI · MEGA Hackathon 2026
-        </span>
+        <span>Polis AI · MEGA Hackathon 2026</span>
       </footer>
     </div>
   );

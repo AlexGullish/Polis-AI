@@ -15,6 +15,11 @@ export interface CityData {
   publicTrust: number; // index 0-100
   debtRatio: number; // debt as % of GDP
   greenInvestment: number; // % of budget on green infra
+  // Optional fields added by live refresh
+  healthcareAccess?: number; // 0-100, higher is better
+  educationIndex?: number; // 0-100, higher is better
+  housingAffordability?: number; // 0-100, higher is better
+  digitalConnectivity?: number; // 0-100, higher is better
 }
 
 export interface PillarScores {
@@ -24,23 +29,76 @@ export interface PillarScores {
   publicApproval: number;
 }
 
-export type PolicyIntensity = 'low' | 'medium' | 'high';
+// --- Policy types ---
 
-export interface PolicyConfig {
-  id: string;
-  intensity: PolicyIntensity;
-  duration: number; // years 1-5
+export type PolicyCategory =
+  | 'energy'
+  | 'transportation'
+  | 'governance'
+  | 'housing'
+  | 'healthcare'
+  | 'education'
+  | 'digital'
+  | 'business'
+  | 'agriculture'
+  | 'industry';
+
+export interface PolicyBudgetRange {
+  minPerYear: number; // USD millions — floor for any effect
+  refPerYear: number; // USD millions — reference budget giving baseImpact exactly
+  maxPerYear: number; // USD millions — ceiling; spending above this is wasted
 }
 
 export interface PolicyDefinition {
   id: string;
   name: string;
-  category: 'energy' | 'transportation' | 'governance';
+  category: PolicyCategory;
   description: string;
-  costLevel: 'Low' | 'Medium' | 'High';
-  budgetImpactPct: Record<PolicyIntensity, number>; // % of budget consumed
-  impacts: Record<PolicyIntensity, Partial<CityData>>;
+  budgetRange: PolicyBudgetRange;
+  // baseImpact is the delta applied per simulated year when budgetPerYear == refPerYear
+  baseImpact: Partial<CityData>;
 }
+
+export interface PolicyConfig {
+  id: string;
+  startYear: number; // 1-based; first year policy is active
+  endYear: number; // inclusive; last year policy is active
+  budgetPerYear: number; // USD millions per year
+  companyId?: string; // optional selected company id
+}
+
+// --- Company types ---
+
+export type RiskLevel = 'low' | 'medium' | 'high';
+
+export interface CompanyProfile {
+  id: string;
+  name: string;
+  costEfficiency: number; // multiplier on impact per dollar, 0.7–1.3
+  riskFactor: RiskLevel;
+  description: string;
+  isLocal: boolean;
+}
+
+export interface CompanyCache {
+  [cacheKey: string]: { // key = `${cityId}-${policyId}`
+    companies: CompanyProfile[];
+    fetchedAt: number; // Date.now()
+    loading?: boolean;
+  };
+}
+
+// --- AI Scenario types ---
+
+export interface AIScenarioRequest {
+  cityId: string;
+  cityName: string;
+  currentData: CityData;
+  goal: string;
+  simulationYears: number;
+}
+
+// --- Simulation types ---
 
 export interface SimulationYear {
   year: number;
@@ -50,8 +108,9 @@ export interface SimulationYear {
 }
 
 export interface SimulationResult {
+  label: 'user' | 'ai';
   baseline: SimulationYear;
   projections: SimulationYear[];
   selectedPolicies: PolicyConfig[];
-  totalCost: number; // billion USD
+  totalCostPerYear: number; // USD millions/yr (sum of active policy budgets)
 }

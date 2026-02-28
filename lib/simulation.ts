@@ -1,32 +1,15 @@
-import { CityData, PolicyConfig, SimulationResult, SimulationYear } from './types';
+// NOTE: budgetPerYear in PolicyConfig is in USD millions.
+// annualBudget in CityData is in USD billions.
+// Convert: budgetPerYear / 1000 gives USD billions for comparison.
+
+import { CityData, CompanyCache, PolicyConfig, PolicyDefinition, SimulationResult, SimulationYear } from './types';
 import { calcAllScores } from './scoring';
-import { getPolicyById } from './policies';
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/**
- * Apply a single policy's impact to city metrics (in-place on a copy).
- * Impacts scale linearly over duration years; we apply them per-year.
- */
-function applyPolicies(base: CityData, policies: PolicyConfig[]): CityData {
-  const city = { ...base };
-
-  for (const config of policies) {
-    const def = getPolicyById(config.id);
-    if (!def) continue;
-    const impact = def.impacts[config.intensity];
-
-    for (const [key, delta] of Object.entries(impact)) {
-      const k = key as keyof CityData;
-      if (typeof city[k] === 'number' && typeof delta === 'number') {
-        (city[k] as number) = (city[k] as number) + delta;
-      }
-    }
-  }
-
-  // Clamp metrics to realistic bounds
+function clampMetrics(city: CityData): CityData {
   city.co2PerCapita = clamp(city.co2PerCapita, 0.1, 30);
   city.co2Total = clamp(city.co2Total, 0.1, 400);
   city.renewableEnergy = clamp(city.renewableEnergy, 0, 100);
@@ -37,7 +20,10 @@ function applyPolicies(base: CityData, policies: PolicyConfig[]): CityData {
   city.publicTrust = clamp(city.publicTrust, 0, 100);
   city.debtRatio = clamp(city.debtRatio, 0, 250);
   city.greenInvestment = clamp(city.greenInvestment, 0, 40);
-
+  if (city.healthcareAccess !== undefined) city.healthcareAccess = clamp(city.healthcareAccess, 0, 100);
+  if (city.educationIndex !== undefined) city.educationIndex = clamp(city.educationIndex, 0, 100);
+  if (city.housingAffordability !== undefined) city.housingAffordability = clamp(city.housingAffordability, 0, 100);
+  if (city.digitalConnectivity !== undefined) city.digitalConnectivity = clamp(city.digitalConnectivity, 0, 100);
   return city;
 }
 
@@ -49,34 +35,29 @@ function buildYear(year: number, metrics: CityData): SimulationYear {
   else if (metrics.debtRatio > 75) warnings.push('Elevated Debt: Approaching unsustainable levels');
 
   if (metrics.publicTrust < 25) warnings.push('Public Unrest Risk: Trust index critically low');
-
   if (metrics.airQuality > 150) warnings.push('Health Emergency: Air quality hazardous');
-
   if (scores.fiscalStability < 20) warnings.push('Fiscal Collapse Risk: Severe budget stress');
 
   return { year, metrics, scores, warnings };
 }
 
-function calcTotalCost(baseCity: CityData, policies: PolicyConfig[]): number {
-  let pct = 0;
-  for (const config of policies) {
-    const def = getPolicyById(config.id);
-    if (!def) continue;
-    pct += Math.abs(def.budgetImpactPct[config.intensity]);
-  }
-  return Number(((pct / 100) * baseCity.annualBudget).toFixed(2));
-}
-
 /**
- * Run a multi-year simulation.
- * Each year, policies are applied on top of the previous year's metrics.
- * After a policy's duration expires, its annual incremental effect stops
- * (but the changes already made persist in the metrics).
+ * Run a multi-year simulation with budget-based, start/end year policy logic.
+ *
+ * @param baseCity     — baseline city snapshot
+ * @param policies     — user-configured policy set
+ * @param policyDefs   — full policy definitions (from POLICIES constant)
+ * @param companyCache — optional cache of fetched companies; used for efficiency multipliers
+ * @param years        — number of years to simulate (default 10)
+ * @param label        — 'user' or 'ai' (for dual-scenario graph)
  */
 export function runSimulation(
   baseCity: CityData,
   policies: PolicyConfig[],
-  years: number = 10
+  policyDefs: PolicyDefinition[],
+  companyCache: CompanyCache,
+  years: number = 10,
+  label: 'user' | 'ai' = 'user'
 ): SimulationResult {
   const baseline = buildYear(0, baseCity);
   const projections: SimulationYear[] = [];
@@ -84,49 +65,66 @@ export function runSimulation(
   let current = { ...baseCity };
 
   for (let y = 1; y <= years; y++) {
-    // Only apply policies that are still within their duration
-    const activeThisYear = policies.filter(p => p.duration >= y);
-
-    // Per-year delta is 1/duration of total impact
-    const scaledPolicies: PolicyConfig[] = activeThisYear.map(p => p); // same configs but impact applied once per year
-
-    // Build per-year impact (1/duration fraction per year)
     const yearMetrics = { ...current };
 
-    for (const config of activeThisYear) {
-      const def = getPolicyById(config.id);
-      if (!def) continue;
-      const totalImpact = def.impacts[config.intensity];
-      const fraction = 1 / config.duration;
+    // Sum of active policy budgets this year (in USD millions)
+    let totalActiveBudgetM = 0;
 
-      for (const [key, delta] of Object.entries(totalImpact)) {
+    for (const config of policies) {
+      // Only apply if this year falls within the policy's active window
+      if (config.startYear > y || config.endYear < y) continue;
+
+      const def = policyDefs.find(d => d.id === config.id);
+      if (!def) continue;
+
+      totalActiveBudgetM += config.budgetPerYear;
+
+      // Budget ratio: how much budget vs reference budget (clamped to min/max range)
+      const minRatio = def.budgetRange.minPerYear / def.budgetRange.refPerYear;
+      const maxRatio = def.budgetRange.maxPerYear / def.budgetRange.refPerYear;
+      const budgetRatio = clamp(
+        config.budgetPerYear / def.budgetRange.refPerYear,
+        minRatio,
+        maxRatio
+      );
+
+      // Company efficiency multiplier (default 1.0 if no company selected or not in cache)
+      const cacheKey = `${baseCity.id}-${config.id}`;
+      const cached = companyCache[cacheKey];
+      const companyEff = config.companyId && cached
+        ? (cached.companies.find(c => c.id === config.companyId)?.costEfficiency ?? 1.0)
+        : 1.0;
+
+      // Apply scaled impact per year
+      for (const [key, baseDelta] of Object.entries(def.baseImpact)) {
         const k = key as keyof CityData;
-        if (typeof yearMetrics[k] === 'number' && typeof delta === 'number') {
-          (yearMetrics[k] as number) = (yearMetrics[k] as number) + delta * fraction;
+        if (typeof yearMetrics[k] === 'number' && typeof baseDelta === 'number') {
+          (yearMetrics[k] as number) += baseDelta * budgetRatio * companyEff;
         }
       }
     }
 
-    // Clamp
-    yearMetrics.co2PerCapita = clamp(yearMetrics.co2PerCapita, 0.1, 30);
-    yearMetrics.co2Total = clamp(yearMetrics.co2Total, 0.1, 400);
-    yearMetrics.renewableEnergy = clamp(yearMetrics.renewableEnergy, 0, 100);
-    yearMetrics.publicTransit = clamp(yearMetrics.publicTransit, 0, 100);
-    yearMetrics.airQuality = clamp(yearMetrics.airQuality, 5, 300);
-    yearMetrics.crimeRate = clamp(yearMetrics.crimeRate, 2, 500);
-    yearMetrics.infrastructureInvestment = clamp(yearMetrics.infrastructureInvestment, 0, 50);
-    yearMetrics.publicTrust = clamp(yearMetrics.publicTrust, 0, 100);
-    yearMetrics.debtRatio = clamp(yearMetrics.debtRatio, 0, 250);
-    yearMetrics.greenInvestment = clamp(yearMetrics.greenInvestment, 0, 40);
+    // Budget overspend penalty: if total active spend > 15% of city annual budget, small debtRatio bump
+    // annualBudget is in USD billions; totalActiveBudgetM is USD millions → / 1000 to match
+    const budgetSpentFraction = (totalActiveBudgetM / 1000) / baseCity.annualBudget;
+    if (budgetSpentFraction > 0.15) {
+      yearMetrics.debtRatio += (budgetSpentFraction - 0.15) * 100 * 0.1;
+    }
 
-    current = yearMetrics;
+    current = clampMetrics(yearMetrics);
     projections.push(buildYear(y, { ...current }));
   }
 
+  // Total cost per year = sum of all policy budgets active at year 1 (as a snapshot)
+  const totalCostPerYear = policies
+    .filter(p => p.startYear <= 1 && p.endYear >= 1)
+    .reduce((sum, p) => sum + p.budgetPerYear, 0);
+
   return {
+    label,
     baseline,
     projections,
     selectedPolicies: policies,
-    totalCost: calcTotalCost(baseCity, policies),
+    totalCostPerYear,
   };
 }
