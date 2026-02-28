@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Loader2, ChevronDown, ChevronUp, Leaf, Landmark, DollarSign, Smile } from 'lucide-react';
+import { Sparkles, Loader2, Leaf, Landmark, DollarSign, Smile } from 'lucide-react';
 import { SimulationResult } from '@/lib/types';
 import { POLICIES } from '@/lib/policies';
 
@@ -17,11 +17,17 @@ interface Advisory {
   suggestions: string[];
 }
 
+const PILLAR_META = [
+  { key: 'sustainability' as const, icon: <Leaf size={12} />, label: 'Sustainability', color: 'var(--accent-green)' },
+  { key: 'governance' as const, icon: <Landmark size={12} />, label: 'Governance', color: 'var(--accent-purple)' },
+  { key: 'fiscalStability' as const, icon: <DollarSign size={12} />, label: 'Fiscal', color: 'var(--accent-yellow)' },
+  { key: 'publicApproval' as const, icon: <Smile size={12} />, label: 'Approval', color: 'var(--accent-blue)' },
+] as const;
+
 export default function AIAdvisor({ result, cityName }: Props) {
   const [advisory, setAdvisory] = useState<Advisory | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(true);
 
   async function requestAdvice() {
     if (!result) return;
@@ -53,132 +59,133 @@ export default function AIAdvisor({ result, cityName }: Props) {
   const baseScores = result?.baseline.scores;
 
   return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
-    >
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-3 cursor-pointer"
-        style={{ borderBottom: '1px solid var(--border)' }}
-        onClick={() => setExpanded(e => !e)}
-      >
-        <div className="flex items-center gap-2">
-          <Sparkles size={16} style={{ color: 'var(--accent-purple)' }} />
-          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            AI Policy Advisor
-          </span>
+    <div className="space-y-4">
+      {/* Empty state */}
+      {!result && (
+        <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          >
+            <Sparkles size={18} style={{ color: 'var(--accent-purple)' }} />
+          </div>
+          <div>
+            <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+              AI Advisor ready
+            </div>
+            <div className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              Select policies and run a simulation, then get AI analysis of the projected outcomes.
+            </div>
+          </div>
         </div>
-        {expanded ? (
-          <ChevronUp size={16} style={{ color: 'var(--text-secondary)' }} />
-        ) : (
-          <ChevronDown size={16} style={{ color: 'var(--text-secondary)' }} />
-        )}
-      </div>
+      )}
 
-      {expanded && (
-        <div className="p-4 space-y-4">
-          {/* Score deltas summary */}
-          {result && finalScores && baseScores && (
-            <div className="grid grid-cols-2 gap-2">
-              {(
-                [
-                  ['sustainability', <Leaf size={14} key="sust" style={{ display: 'inline' }} />, 'Sustainability'],
-                  ['governance', <Landmark size={14} key="gov" style={{ display: 'inline' }} />, 'Governance'],
-                  ['fiscalStability', <DollarSign size={14} key="fisc" style={{ display: 'inline' }} />, 'Fiscal'],
-                  ['publicApproval', <Smile size={14} key="pub" style={{ display: 'inline' }} />, 'Approval'],
-                ] as const
-              ).map(([key, icon, label]) => {
-                const delta = finalScores[key] - baseScores[key];
-                return (
+      {/* Score delta bars */}
+      {result && finalScores && baseScores && (
+        <div className="space-y-2.5">
+          {PILLAR_META.map(({ key, icon, label, color }) => {
+            const delta = Math.round(finalScores[key] - baseScores[key]);
+            const barWidth = Math.min(Math.abs(delta) / 20, 1) * 100;
+            const deltaColor = delta > 0
+              ? 'var(--accent-green)'
+              : delta < 0
+                ? 'var(--accent-red)'
+                : 'var(--text-muted)';
+            return (
+              <div key={key}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <span style={{ color }}>{icon}</span>
+                    {label}
+                  </span>
+                  <span className="text-xs font-semibold tabular-nums" style={{ color: deltaColor }}>
+                    {delta > 0 ? '+' : ''}{delta}
+                  </span>
+                </div>
+                <div
+                  className="h-0.5 rounded-full overflow-hidden"
+                  style={{ background: 'var(--bg-card)' }}
+                >
                   <div
-                    key={key}
-                    className="flex items-center justify-between px-3 py-2 rounded-lg text-xs"
-                    style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)' }}
-                  >
-                    <span className="flex items-center gap-1">
-                      {icon} {label}
-                    </span>
-                    <span
-                      className="font-bold"
-                      style={{
-                        color:
-                          delta > 0
-                            ? 'var(--accent-green)'
-                            : delta < 0
-                              ? 'var(--accent-red)'
-                              : 'var(--text-muted)',
-                      }}
-                    >
-                      {delta > 0 ? '+' : ''}{delta}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${barWidth}%`, background: deltaColor }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-          {/* Policies active */}
-          {policyNames.length > 0 && (
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Active policies: </span>
-              {policyNames.join(', ')}
-            </div>
-          )}
-
-          {/* CTA */}
-          {!advisory && !loading && (
-            <button
-              onClick={requestAdvice}
-              disabled={!result || result.selectedPolicies.length === 0}
-              className="w-full py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
+      {/* Active policy chips */}
+      {policyNames.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {policyNames.map((name, i) => (
+            <span
+              key={i}
+              className="text-xs px-1.5 py-0.5 rounded"
               style={{
-                background: 'var(--accent-purple)',
-                color: '#fff',
+                background: 'var(--bg-card)',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border)',
               }}
             >
-              {result?.selectedPolicies.length === 0
-                ? 'Select policies to get advice'
-                : 'Get AI Analysis'}
-            </button>
+              {name}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* CTA */}
+      {result && !advisory && !loading && (
+        <button
+          onClick={requestAdvice}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90"
+          style={{ background: 'var(--accent-purple)', color: '#fff' }}
+        >
+          <Sparkles size={14} />
+          Analyse with AI
+        </button>
+      )}
+
+      {loading && (
+        <div className="flex items-center justify-center gap-2 py-6 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <Loader2 size={14} className="animate-spin" />
+          Analysing...
+        </div>
+      )}
+
+      {error && (
+        <div
+          className="text-xs px-3 py-2 rounded-lg"
+          style={{ background: '#2d1b1b', color: 'var(--accent-red)', border: '1px solid var(--accent-red)' }}
+        >
+          {error}
+        </div>
+      )}
+
+      {advisory && (
+        <div className="space-y-4">
+          {/* Summary */}
+          <div
+            className="text-xs leading-relaxed"
+            style={{
+              color: 'var(--text-secondary)',
+              borderTop: '1px solid var(--border)',
+              paddingTop: '0.75rem',
+            }}
+          >
+            {advisory.summary}
+          </div>
+
+          <Section title="Tradeoffs" color="var(--accent-yellow)" items={advisory.tradeoffs} />
+
+          {advisory.risks.length > 0 && (
+            <Section title="Risks" color="var(--accent-red)" items={advisory.risks} />
           )}
 
-          {loading && (
-            <div className="flex items-center justify-center gap-2 py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <Loader2 size={16} className="animate-spin" />
-              Analysing simulation...
-            </div>
-          )}
-
-          {error && (
-            <div
-              className="text-xs px-3 py-2 rounded-lg"
-              style={{ background: '#2d1b1b', color: 'var(--accent-red)', border: '1px solid var(--accent-red)' }}
-            >
-              {error}
-            </div>
-          )}
-
-          {advisory && (
-            <div className="space-y-4">
-              {/* Summary */}
-              <div className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
-                {advisory.summary}
-              </div>
-
-              {/* Tradeoffs */}
-              <Section title="Tradeoffs" color="var(--accent-yellow)" items={advisory.tradeoffs} />
-
-              {/* Risks */}
-              {advisory.risks.length > 0 && (
-                <Section title="Risks" color="var(--accent-red)" items={advisory.risks} />
-              )}
-
-              {/* Suggestions */}
-              {advisory.suggestions.length > 0 && (
-                <Section title="Suggestions" color="var(--accent-green)" items={advisory.suggestions} />
-              )}
-            </div>
+          {advisory.suggestions.length > 0 && (
+            <Section title="Suggestions" color="var(--accent-green)" items={advisory.suggestions} />
           )}
         </div>
       )}
@@ -188,14 +195,16 @@ export default function AIAdvisor({ result, cityName }: Props) {
 
 function Section({ title, color, items }: { title: string; color: string; items: string[] }) {
   return (
-    <div>
+    <div
+      className="pl-3 py-0.5"
+      style={{ borderLeft: `2px solid ${color}` }}
+    >
       <div className="text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color }}>
         {title}
       </div>
       <ul className="space-y-1.5">
         {items.map((item, i) => (
-          <li key={i} className="flex gap-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            <span style={{ color, flexShrink: 0 }}>·</span>
+          <li key={i} className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             {item}
           </li>
         ))}

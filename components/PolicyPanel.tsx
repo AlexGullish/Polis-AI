@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Zap, Train, Landmark, ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
+import { Zap, Train, Landmark, Plus, X } from 'lucide-react';
 import { POLICIES } from '@/lib/policies';
 import { PolicyConfig, PolicyIntensity, PolicyDefinition } from '@/lib/types';
 
@@ -24,9 +23,15 @@ const CATEGORY_COLORS: Record<string, string> = {
   governance: 'var(--accent-purple)',
 };
 
+const CATEGORY_BG: Record<string, string> = {
+  energy: 'rgba(245,158,11,0.12)',
+  transportation: 'rgba(59,130,246,0.12)',
+  governance: 'rgba(139,92,246,0.12)',
+};
+
 const INTENSITY_LABELS: Record<PolicyIntensity, string> = {
   low: 'Low',
-  medium: 'Medium',
+  medium: 'Med',
   high: 'High',
 };
 
@@ -43,7 +48,6 @@ function PolicyCard({ policy, config, onAdd, onRemove, onUpdate }: {
   onRemove: () => void;
   onUpdate: (c: Partial<PolicyConfig>) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
   const isSelected = !!config;
   const catColor = CATEGORY_COLORS[policy.category];
 
@@ -54,26 +58,22 @@ function PolicyCard({ policy, config, onAdd, onRemove, onUpdate }: {
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
         borderLeft: isSelected ? `3px solid ${catColor}` : '1px solid var(--border)',
-        opacity: 1,
       }}
     >
       <div className="p-3">
         <div className="flex items-start gap-2">
-          <span style={{ color: catColor, marginTop: 2 }}>{CATEGORY_ICONS[policy.category]}</span>
+          <span style={{ color: catColor, marginTop: 2, flexShrink: 0 }}>{CATEGORY_ICONS[policy.category]}</span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                 {policy.name}
               </span>
-              <div className="flex items-center gap-1 shrink-0">
-                <span
-                  className="text-xs px-1.5 py-0.5 rounded"
-                  style={{
-                    background: 'var(--bg-base)',
-                    color: COST_COLOR[policy.costLevel],
-                    border: `1px solid ${COST_COLOR[policy.costLevel]}`,
-                  }}
-                >
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                  <span
+                    className="inline-block w-1.5 h-1.5 rounded-full"
+                    style={{ background: COST_COLOR[policy.costLevel] }}
+                  />
                   {policy.costLevel}
                 </span>
                 {isSelected ? (
@@ -96,28 +96,21 @@ function PolicyCard({ policy, config, onAdd, onRemove, onUpdate }: {
               </div>
             </div>
 
-            <button
-              className="text-xs mt-1 flex items-center gap-1 hover:opacity-80"
-              style={{ color: 'var(--text-secondary)' }}
-              onClick={() => setExpanded(e => !e)}
+            <p
+              className="text-xs mt-0.5 truncate"
+              style={{ color: 'var(--text-muted)' }}
+              title={policy.description}
             >
-              {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-              {expanded ? 'Hide details' : 'Show details'}
-            </button>
+              {policy.description}
+            </p>
           </div>
         </div>
-
-        {expanded && (
-          <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            {policy.description}
-          </p>
-        )}
       </div>
 
       {isSelected && config && (
         <div
           className="px-3 pb-3 pt-2 space-y-2 border-t"
-          style={{ borderColor: 'var(--border-subtle)' }}
+          style={{ borderColor: 'var(--border)' }}
         >
           {/* Intensity */}
           <div>
@@ -154,7 +147,7 @@ function PolicyCard({ policy, config, onAdd, onRemove, onUpdate }: {
               max={5}
               value={config.duration}
               onChange={e => onUpdate({ duration: Number(e.target.value) })}
-              className="w-full accent-blue-500 h-1"
+              className="w-full h-1"
               style={{ accentColor: catColor }}
             />
             <div className="flex justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -164,10 +157,10 @@ function PolicyCard({ policy, config, onAdd, onRemove, onUpdate }: {
 
           {/* Budget impact */}
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Budget impact:{' '}
+            Budget:{' '}
             <span style={{ color: policy.budgetImpactPct[config.intensity] < 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
               {policy.budgetImpactPct[config.intensity] < 0 ? '+' : '-'}
-              {Math.abs(policy.budgetImpactPct[config.intensity])}% per year
+              {Math.abs(policy.budgetImpactPct[config.intensity])}%/yr
             </span>
           </div>
         </div>
@@ -194,18 +187,12 @@ export default function PolicyPanel({ selectedPolicies, onChange, simulationYear
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto">
-      {/* Simulation horizon */}
-      <div
-        className="rounded-xl p-4"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
-      >
-        <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-          Simulation Horizon
-        </div>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Years to project</span>
-          <span className="text-sm font-bold" style={{ color: 'var(--accent-blue)' }}>
-            {simulationYears} years
+      {/* Simulation horizon — slim strip */}
+      <div className="pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Projection horizon</span>
+          <span className="text-xs font-semibold tabular-nums" style={{ color: 'var(--accent-blue)' }}>
+            {simulationYears}yr
           </span>
         </div>
         <input
@@ -217,38 +204,62 @@ export default function PolicyPanel({ selectedPolicies, onChange, simulationYear
           className="w-full h-1"
           style={{ accentColor: 'var(--accent-blue)' }}
         />
-        <div className="flex justify-between text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-          <span>1yr</span><span>10yr</span>
-        </div>
       </div>
 
       {/* Policy categories */}
-      {categories.map(cat => (
-        <div key={cat}>
-          <div
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider mb-2 px-1"
-            style={{ color: CATEGORY_COLORS[cat] }}
-          >
-            {CATEGORY_ICONS[cat]}
-            {categoryLabels[cat]}
+      {categories.map(cat => {
+        const selectedCount = selectedPolicies.filter(sp =>
+          POLICIES.find(p => p.id === sp.id)?.category === cat
+        ).length;
+
+        return (
+          <div key={cat}>
+            {/* Category header */}
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className="block w-0.5 h-4 rounded-full shrink-0"
+                style={{ background: CATEGORY_COLORS[cat] }}
+              />
+              <span style={{ color: CATEGORY_COLORS[cat] }}>
+                {CATEGORY_ICONS[cat]}
+              </span>
+              <span
+                className="text-xs font-semibold uppercase tracking-wider flex-1"
+                style={{ color: CATEGORY_COLORS[cat] }}
+              >
+                {categoryLabels[cat]}
+              </span>
+              {selectedCount > 0 && (
+                <span
+                  className="text-xs px-1.5 py-0.5 rounded-full font-semibold"
+                  style={{
+                    background: CATEGORY_BG[cat],
+                    color: CATEGORY_COLORS[cat],
+                  }}
+                >
+                  {selectedCount}
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {POLICIES.filter(p => p.category === cat).map(policy => {
+                const config = selectedPolicies.find(sp => sp.id === policy.id);
+                return (
+                  <PolicyCard
+                    key={policy.id}
+                    policy={policy}
+                    config={config}
+                    onAdd={() => addPolicy(policy.id)}
+                    onRemove={() => removePolicy(policy.id)}
+                    onUpdate={patch => updatePolicy(policy.id, patch)}
+                  />
+                );
+              })}
+            </div>
           </div>
-          <div className="space-y-2">
-            {POLICIES.filter(p => p.category === cat).map(policy => {
-              const config = selectedPolicies.find(sp => sp.id === policy.id);
-              return (
-                <PolicyCard
-                  key={policy.id}
-                  policy={policy}
-                  config={config}
-                  onAdd={() => addPolicy(policy.id)}
-                  onRemove={() => removePolicy(policy.id)}
-                  onUpdate={patch => updatePolicy(policy.id, patch)}
-                />
-              );
-            })}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
