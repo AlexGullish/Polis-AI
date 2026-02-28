@@ -63,13 +63,20 @@ Be specific, data-driven, and reference the actual numbers. Keep each bullet to 
     const completion = await client.chat.completions.create({
       model: 'zai-org/GLM-5',
       max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: 'You are a JSON-only API. Respond with raw JSON and nothing else — no markdown, no code fences, no explanation.' },
+        { role: 'user', content: prompt },
+      ],
     });
 
     const text = completion.choices[0].message.content ?? '';
+    console.log('Raw advisor response:', text);
 
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+    const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+
+    // Extract the first JSON object from the response
+    const jsonMatch = stripped.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON in response');
 
     const advisory = JSON.parse(jsonMatch[0]);
