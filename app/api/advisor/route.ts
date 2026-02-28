@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   const policyDetails = result.selectedPolicies.map(sp => {
     const def = POLICIES.find(p => p.id === sp.id);
-    return `${def?.name} (${sp.intensity} intensity, ${sp.duration}-year duration)`;
+    return `${def?.name} ($${sp.budgetPerYear}M/yr, years ${sp.startYear}–${sp.endYear})`;
   });
 
   const scoreDelta = (key: keyof typeof baseline.scores) =>
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 ## Simulation Context
 - Projection horizon: ${horizon} years
 - Selected policies: ${policyDetails.length > 0 ? policyDetails.join(', ') : 'None'}
-- Estimated annual policy cost: $${result.totalCost.toFixed(1)}B
+- Estimated annual policy cost: $${result.totalCostPerYear.toFixed(0)}M
 
 ## Pillar Score Changes (Baseline → Final)
 - 🌱 Sustainability: ${scoreDelta('sustainability')}

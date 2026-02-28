@@ -15,10 +15,11 @@ import { AlertTriangle } from 'lucide-react';
 import { SimulationResult } from '@/lib/types';
 
 interface Props {
-  result: SimulationResult;
+  userResult: SimulationResult;
+  aiResult?: SimulationResult | null;
 }
 
-const SERIES = [
+const SCORE_SERIES = [
   { key: 'sustainability', label: 'Sustainability', color: '#10b981' },
   { key: 'governance', label: 'Governance', color: '#8b5cf6' },
   { key: 'fiscalStability', label: 'Fiscal Stability', color: '#f59e0b' },
@@ -60,33 +61,54 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function SimulationGraph({ result }: Props) {
+export default function SimulationGraph({ userResult, aiResult }: Props) {
   const [tab, setTab] = useState<Tab>('scores');
   const [activeSeries, setActiveSeries] = useState<Set<string>>(
-    new Set(SERIES.map(s => s.key))
+    new Set(SCORE_SERIES.map(s => s.key))
   );
 
-  const allYears = [result.baseline, ...result.projections];
+  const hasAI = !!aiResult;
+  const userYears = [userResult.baseline, ...userResult.projections];
+  const aiYears = aiResult ? [aiResult.baseline, ...aiResult.projections] : [];
 
-  const scoreData = allYears.map(y => ({
-    year: y.year,
-    sustainability: y.scores.sustainability,
-    governance: y.scores.governance,
-    fiscalStability: y.scores.fiscalStability,
-    publicApproval: y.scores.publicApproval,
-  }));
+  // Build merged data: same year axis, user_ and ai_ prefixed keys
+  const maxYears = Math.max(userYears.length, aiYears.length);
+  const scoreData = Array.from({ length: maxYears }, (_, i) => {
+    const u = userYears[i];
+    const a = aiYears[i];
+    return {
+      year: u?.year ?? a?.year ?? i,
+      user_sustainability: u?.scores.sustainability,
+      user_governance: u?.scores.governance,
+      user_fiscalStability: u?.scores.fiscalStability,
+      user_publicApproval: u?.scores.publicApproval,
+      ai_sustainability: a?.scores.sustainability,
+      ai_governance: a?.scores.governance,
+      ai_fiscalStability: a?.scores.fiscalStability,
+      ai_publicApproval: a?.scores.publicApproval,
+    };
+  });
 
-  const metricData = allYears.map(y => ({
-    year: y.year,
-    co2PerCapita: Number(y.metrics.co2PerCapita.toFixed(2)),
-    renewableEnergy: Number(y.metrics.renewableEnergy.toFixed(1)),
-    publicTransit: Number(y.metrics.publicTransit.toFixed(1)),
-    publicTrust: Number(y.metrics.publicTrust.toFixed(1)),
-    debtRatio: Number(y.metrics.debtRatio.toFixed(1)),
-  }));
+  const metricData = Array.from({ length: maxYears }, (_, i) => {
+    const u = userYears[i];
+    const a = aiYears[i];
+    return {
+      year: u?.year ?? a?.year ?? i,
+      user_co2PerCapita: u ? Number(u.metrics.co2PerCapita.toFixed(2)) : undefined,
+      user_renewableEnergy: u ? Number(u.metrics.renewableEnergy.toFixed(1)) : undefined,
+      user_publicTransit: u ? Number(u.metrics.publicTransit.toFixed(1)) : undefined,
+      user_publicTrust: u ? Number(u.metrics.publicTrust.toFixed(1)) : undefined,
+      user_debtRatio: u ? Number(u.metrics.debtRatio.toFixed(1)) : undefined,
+      ai_co2PerCapita: a ? Number(a.metrics.co2PerCapita.toFixed(2)) : undefined,
+      ai_renewableEnergy: a ? Number(a.metrics.renewableEnergy.toFixed(1)) : undefined,
+      ai_publicTransit: a ? Number(a.metrics.publicTransit.toFixed(1)) : undefined,
+      ai_publicTrust: a ? Number(a.metrics.publicTrust.toFixed(1)) : undefined,
+      ai_debtRatio: a ? Number(a.metrics.debtRatio.toFixed(1)) : undefined,
+    };
+  });
 
+  const currentSeries = tab === 'scores' ? SCORE_SERIES : METRIC_SERIES;
   const data = tab === 'scores' ? scoreData : metricData;
-  const series = tab === 'scores' ? SERIES : METRIC_SERIES;
 
   function toggleSeries(key: string) {
     setActiveSeries(prev => {
@@ -97,11 +119,21 @@ export default function SimulationGraph({ result }: Props) {
     });
   }
 
-  // Warnings from any projection year
-  const allWarnings = result.projections.flatMap(y =>
-    y.warnings.map(w => ({ year: y.year, warning: w }))
-  );
-  const uniqueWarnings = [...new Map(allWarnings.map(w => [w.warning, w])).values()];
+  function switchTab(t: Tab) {
+    setTab(t);
+    setActiveSeries(new Set((t === 'scores' ? SCORE_SERIES : METRIC_SERIES).map(s => s.key)));
+  }
+
+  type WarningEntry = { year: number; warning: string; source: 'user' | 'ai' };
+  const allWarnings: WarningEntry[] = [
+    ...userResult.projections.flatMap(y =>
+      y.warnings.map(w => ({ year: y.year, warning: w, source: 'user' as const }))
+    ),
+    ...(aiResult?.projections ?? []).flatMap(y =>
+      y.warnings.map(w => ({ year: y.year, warning: w, source: 'ai' as const }))
+    ),
+  ];
+  const uniqueWarnings = [...new Map(allWarnings.map(w => [`${w.source}-${w.warning}`, w])).values()];
 
   return (
     <div
@@ -109,8 +141,25 @@ export default function SimulationGraph({ result }: Props) {
       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
     >
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          Multi-Year Projections
+        <div className="flex items-center gap-3">
+          <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+            Multi-Year Projections
+          </div>
+          {hasAI && (
+            <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-5 h-0.5 rounded" style={{ background: '#8b5cf6' }} />
+                User
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-5" style={{
+                  borderTop: '2px dashed #8b5cf6',
+                  opacity: 0.7,
+                }} />
+                AI Scenario
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex gap-1">
           {(['scores', 'metrics'] as Tab[]).map(t => (
@@ -122,10 +171,7 @@ export default function SimulationGraph({ result }: Props) {
                 color: tab === t ? '#fff' : 'var(--text-secondary)',
                 border: '1px solid var(--border)',
               }}
-              onClick={() => {
-                setTab(t);
-                setActiveSeries(new Set((t === 'scores' ? SERIES : METRIC_SERIES).map(s => s.key)));
-              }}
+              onClick={() => switchTab(t)}
             >
               {t === 'scores' ? 'Pillar Scores' : 'Raw Metrics'}
             </button>
@@ -135,7 +181,7 @@ export default function SimulationGraph({ result }: Props) {
 
       {/* Legend toggles */}
       <div className="flex flex-wrap gap-2">
-        {series.map(s => (
+        {currentSeries.map(s => (
           <button
             key={s.key}
             className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-all"
@@ -147,10 +193,7 @@ export default function SimulationGraph({ result }: Props) {
             }}
             onClick={() => toggleSeries(s.key)}
           >
-            <span
-              className="w-2 h-2 rounded-full inline-block"
-              style={{ background: s.color }}
-            />
+            <span className="w-2 h-2 rounded-full inline-block" style={{ background: s.color }} />
             {s.label}
           </button>
         ))}
@@ -166,21 +209,43 @@ export default function SimulationGraph({ result }: Props) {
           />
           <YAxis tick={{ fontSize: 11, fill: '#8b949e' }} />
           <Tooltip content={<CustomTooltip />} />
-          {series.map(s =>
+          <ReferenceLine x={0} stroke="#30363d" strokeDasharray="4 2" />
+
+          {/* User scenario lines (solid) */}
+          {currentSeries.map(s =>
             activeSeries.has(s.key) ? (
               <Line
-                key={s.key}
+                key={`user_${s.key}`}
                 type="monotone"
-                dataKey={s.key}
+                dataKey={`user_${s.key}`}
                 stroke={s.color}
                 strokeWidth={2}
                 dot={false}
                 activeDot={{ r: 4 }}
                 name={s.label}
+                connectNulls
               />
             ) : null
           )}
-          <ReferenceLine x={0} stroke="#30363d" strokeDasharray="4 2" />
+
+          {/* AI scenario lines (dashed, 70% opacity) */}
+          {hasAI && currentSeries.map(s =>
+            activeSeries.has(s.key) ? (
+              <Line
+                key={`ai_${s.key}`}
+                type="monotone"
+                dataKey={`ai_${s.key}`}
+                stroke={s.color}
+                strokeWidth={2}
+                strokeDasharray="6 3"
+                strokeOpacity={0.65}
+                dot={false}
+                activeDot={{ r: 3 }}
+                name={`${s.label} (AI)`}
+                connectNulls
+              />
+            ) : null
+          )}
         </LineChart>
       </ResponsiveContainer>
 
@@ -197,9 +262,14 @@ export default function SimulationGraph({ result }: Props) {
                 color: '#f85149',
               }}
             >
-              <span><AlertTriangle size={14} /></span>
+              <AlertTriangle size={14} />
               <span>{w.warning}</span>
-              <span className="ml-auto" style={{ color: 'var(--text-muted)' }}>
+              <span className="ml-auto flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                {w.source === 'ai' && (
+                  <span className="px-1 rounded text-xs" style={{ background: 'rgba(139,92,246,0.2)', color: 'var(--accent-purple)' }}>
+                    AI
+                  </span>
+                )}
                 Year {w.year}
               </span>
             </div>
