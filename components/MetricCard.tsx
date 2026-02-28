@@ -1,12 +1,12 @@
 'use client';
 
-import { LucideIcon } from 'lucide-react';
+import { ReactNode } from 'react';
 import { SCORE_FORMULAS } from '@/lib/scoring';
 
 interface Props {
   label: string;
   score: number;
-  icon: string;
+  icon: ReactNode;
   color: string;
   pillar?: 'sustainability' | 'governance' | 'fiscalStability' | 'publicApproval';
   delta?: number; // change from baseline
@@ -57,7 +57,7 @@ export default function MetricCard({ label, score, icon, color, pillar, delta }:
     >
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-lg">{icon}</div>
+          <div className="text-[var(--text-secondary)] mb-1">{icon}</div>
           <div className="text-xs font-medium mt-1" style={{ color: 'var(--text-secondary)' }}>
             {label}
           </div>

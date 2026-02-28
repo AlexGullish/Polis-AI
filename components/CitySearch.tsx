@@ -17,10 +17,10 @@ export default function CitySearch({ selectedCity, onSelect }: Props) {
 
   const filtered = query.trim()
     ? CITIES.filter(
-        c =>
-          c.name.toLowerCase().includes(query.toLowerCase()) ||
-          c.country.toLowerCase().includes(query.toLowerCase())
-      )
+      c =>
+        c.name.toLowerCase().includes(query.toLowerCase()) ||
+        c.country.toLowerCase().includes(query.toLowerCase())
+    )
     : CITIES;
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function CitySearch({ selectedCity, onSelect }: Props) {
                 key={city.id}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:opacity-80"
                 style={{
-                  background: selectedCity?.id === city.id ? 'var(--bg-card)' : 'transparent',
+                  background: selectedCity?.id === city.id ? 'var(--bg-card-hover)' : 'transparent',
                 }}
                 onClick={() => {
                   onSelect(city);

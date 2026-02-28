@@ -51,8 +51,9 @@ function PolicyCard({ policy, config, onAdd, onRemove, onUpdate }: {
     <div
       className="rounded-lg overflow-hidden transition-all"
       style={{
-        background: isSelected ? 'var(--bg-card-hover)' : 'var(--bg-card)',
-        border: `1px solid ${isSelected ? catColor : 'var(--border)'}`,
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderLeft: isSelected ? `3px solid ${catColor}` : '1px solid var(--border)',
         opacity: 1,
       }}
     >

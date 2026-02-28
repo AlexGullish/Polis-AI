@@ -9,9 +9,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
   ReferenceLine,
 } from 'recharts';
+import { AlertTriangle } from 'lucide-react';
 import { SimulationResult } from '@/lib/types';
 
 interface Props {
@@ -19,18 +19,18 @@ interface Props {
 }
 
 const SERIES = [
-  { key: 'sustainability', label: 'Sustainability', color: '#3fb950' },
-  { key: 'governance', label: 'Governance', color: '#a371f7' },
-  { key: 'fiscalStability', label: 'Fiscal Stability', color: '#e3b341' },
-  { key: 'publicApproval', label: 'Public Approval', color: '#388bfd' },
+  { key: 'sustainability', label: 'Sustainability', color: '#10b981' },
+  { key: 'governance', label: 'Governance', color: '#8b5cf6' },
+  { key: 'fiscalStability', label: 'Fiscal Stability', color: '#f59e0b' },
+  { key: 'publicApproval', label: 'Public Approval', color: '#3b82f6' },
 ];
 
 const METRIC_SERIES = [
-  { key: 'co2PerCapita', label: 'CO₂/capita (t)', color: '#f85149' },
-  { key: 'renewableEnergy', label: 'Renewable %', color: '#3fb950' },
-  { key: 'publicTransit', label: 'Transit %', color: '#388bfd' },
-  { key: 'publicTrust', label: 'Public Trust', color: '#a371f7' },
-  { key: 'debtRatio', label: 'Debt Ratio %', color: '#e3b341' },
+  { key: 'co2PerCapita', label: 'CO₂/capita (t)', color: '#ef4444' },
+  { key: 'renewableEnergy', label: 'Renewable %', color: '#10b981' },
+  { key: 'publicTransit', label: 'Transit %', color: '#3b82f6' },
+  { key: 'publicTrust', label: 'Public Trust', color: '#8b5cf6' },
+  { key: 'debtRatio', label: 'Debt Ratio %', color: '#f59e0b' },
 ];
 
 type Tab = 'scores' | 'metrics';
@@ -197,7 +197,7 @@ export default function SimulationGraph({ result }: Props) {
                 color: '#f85149',
               }}
             >
-              <span>⚠</span>
+              <span><AlertTriangle size={14} /></span>
               <span>{w.warning}</span>
               <span className="ml-auto" style={{ color: 'var(--text-muted)' }}>
                 Year {w.year}

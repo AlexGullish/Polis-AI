@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Sparkles, Loader2, ChevronDown, ChevronUp, Leaf, Landmark, DollarSign, Smile } from 'lucide-react';
 import { SimulationResult } from '@/lib/types';
 import { POLICIES } from '@/lib/policies';
 
@@ -38,7 +38,7 @@ export default function AIAdvisor({ result, cityName }: Props) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setAdvisory(data);
-    } catch (e) {
+    } catch {
       setError('Failed to get AI advice. Please try again.');
     } finally {
       setLoading(false);
@@ -83,10 +83,10 @@ export default function AIAdvisor({ result, cityName }: Props) {
             <div className="grid grid-cols-2 gap-2">
               {(
                 [
-                  ['sustainability', '🌱', 'Sustainability'],
-                  ['governance', '🏛', 'Governance'],
-                  ['fiscalStability', '💰', 'Fiscal'],
-                  ['publicApproval', '🙂', 'Approval'],
+                  ['sustainability', <Leaf size={14} key="sust" style={{ display: 'inline' }} />, 'Sustainability'],
+                  ['governance', <Landmark size={14} key="gov" style={{ display: 'inline' }} />, 'Governance'],
+                  ['fiscalStability', <DollarSign size={14} key="fisc" style={{ display: 'inline' }} />, 'Fiscal'],
+                  ['publicApproval', <Smile size={14} key="pub" style={{ display: 'inline' }} />, 'Approval'],
                 ] as const
               ).map(([key, icon, label]) => {
                 const delta = finalScores[key] - baseScores[key];
@@ -96,7 +96,7 @@ export default function AIAdvisor({ result, cityName }: Props) {
                     className="flex items-center justify-between px-3 py-2 rounded-lg text-xs"
                     style={{ background: 'var(--bg-base)', border: '1px solid var(--border-subtle)' }}
                   >
-                    <span>
+                    <span className="flex items-center gap-1">
                       {icon} {label}
                     </span>
                     <span
@@ -106,8 +106,8 @@ export default function AIAdvisor({ result, cityName }: Props) {
                           delta > 0
                             ? 'var(--accent-green)'
                             : delta < 0
-                            ? 'var(--accent-red)'
-                            : 'var(--text-muted)',
+                              ? 'var(--accent-red)'
+                              : 'var(--text-muted)',
                       }}
                     >
                       {delta > 0 ? '+' : ''}{delta}

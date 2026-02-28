@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, Play, RotateCcw } from 'lucide-react';
+import { MapPin, Play, RotateCcw, Map, Activity, Sparkles } from 'lucide-react';
 import { CityData, PolicyConfig } from '@/lib/types';
 import { calcAllScores } from '@/lib/scoring';
 import { runSimulation } from '@/lib/simulation';
@@ -32,7 +32,6 @@ export default function Home() {
     if (simulated && policies.length > 0) {
       // result recalculates via useMemo
     }
-    if (policies.length === 0) setSimulated(false);
   }, [policies, simulated]);
 
   function handleCityChange(city: CityData) {
@@ -67,9 +66,9 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
-            style={{ background: 'var(--accent-blue)' }}
+            style={{ background: 'var(--accent-blue)', color: '#fff' }}
           >
-            🏙
+            <Map size={18} />
           </div>
           <div>
             <div className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
@@ -129,7 +128,11 @@ export default function Home() {
           </div>
           <PolicyPanel
             selectedPolicies={policies}
-            onChange={p => { setPolicies(p); if (simulated) setSimulated(true); }}
+            onChange={p => {
+              setPolicies(p);
+              if (p.length === 0) setSimulated(false);
+              else if (simulated) setSimulated(true);
+            }}
             simulationYears={simulationYears}
             onYearsChange={setSimulationYears}
           />
@@ -144,7 +147,9 @@ export default function Home() {
               className="rounded-xl flex flex-col items-center justify-center py-16 text-center"
               style={{ background: 'var(--bg-card)', border: '1px dashed var(--border)' }}
             >
-              <div className="text-3xl mb-3">📊</div>
+              <div className="mb-3" style={{ color: 'var(--text-muted)' }}>
+                <Activity size={32} />
+              </div>
               <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
                 No simulation running
               </div>
@@ -165,7 +170,8 @@ export default function Home() {
           }}
         >
           <div className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
-            ✨ AI Advisor
+            <Sparkles size={12} />
+            AI Advisor
           </div>
           <AIAdvisor result={simulationResult} cityName={selectedCity.name} />
         </aside>

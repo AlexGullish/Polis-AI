@@ -3,7 +3,7 @@
 import { CityData, PillarScores } from '@/lib/types';
 import { SimulationResult } from '@/lib/types';
 import MetricCard from './MetricCard';
-import { Building2, Users, DollarSign, Wind, Car, Zap, ShieldCheck, TreePine } from 'lucide-react';
+import { Building2, Users, DollarSign, Wind, Car, Zap, ShieldCheck, TreePine, Leaf, Landmark, Smile } from 'lucide-react';
 
 interface Props {
   city: CityData;
@@ -69,7 +69,7 @@ export default function Dashboard({ city, scores, result }: Props) {
         <MetricCard
           label="Sustainability"
           score={displayScores.sustainability}
-          icon="🌱"
+          icon={<Leaf size={20} />}
           color="var(--accent-green)"
           pillar="sustainability"
           delta={delta('sustainability')}
@@ -77,7 +77,7 @@ export default function Dashboard({ city, scores, result }: Props) {
         <MetricCard
           label="Governance"
           score={displayScores.governance}
-          icon="🏛"
+          icon={<Landmark size={20} />}
           color="var(--accent-purple)"
           pillar="governance"
           delta={delta('governance')}
@@ -85,7 +85,7 @@ export default function Dashboard({ city, scores, result }: Props) {
         <MetricCard
           label="Fiscal Stability"
           score={displayScores.fiscalStability}
-          icon="💰"
+          icon={<DollarSign size={20} />}
           color="var(--accent-yellow)"
           pillar="fiscalStability"
           delta={delta('fiscalStability')}
@@ -93,7 +93,7 @@ export default function Dashboard({ city, scores, result }: Props) {
         <MetricCard
           label="Public Approval"
           score={displayScores.publicApproval}
-          icon="🙂"
+          icon={<Smile size={20} />}
           color="var(--accent-blue)"
           pillar="publicApproval"
           delta={delta('publicApproval')}
