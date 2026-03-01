@@ -70,9 +70,9 @@ export default function Dashboard({ city, scores, result, onRefreshCityData, isR
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Building2 size={20} style={{ color: 'var(--accent-blue)' }} />
+            <Building2 size={20} style={{ color: 'var(--text-secondary)' }} />
             <div>
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              <h2 className="text-xl font-bold greek-style tracking-wider" style={{ color: 'var(--text-primary)' }}>
                 {city.name}
               </h2>
               <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
@@ -98,7 +98,7 @@ export default function Dashboard({ city, scores, result, onRefreshCityData, isR
             <RefreshCw
               size={12}
               className={isRefreshing ? 'animate-spin' : ''}
-              style={{ color: isRefreshing ? 'var(--accent-blue)' : undefined }}
+              style={{ color: isRefreshing ? 'var(--text-secondary)' : undefined }}
             />
             {isRefreshing ? 'Refreshing…' : 'Refresh Data'}
           </button>
@@ -154,7 +154,7 @@ export default function Dashboard({ city, scores, result, onRefreshCityData, isR
         className="rounded-xl p-4"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
-        <div className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-secondary)' }}>
+        <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3 greek-style opacity-70" style={{ color: 'var(--text-secondary)' }}>
           City Stats — Baseline
         </div>
         <div className="grid grid-cols-2 gap-2">

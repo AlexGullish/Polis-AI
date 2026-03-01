@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { MapPin, Play, RotateCcw, Map, Activity, Sparkles } from 'lucide-react';
+import { MapPin, Play, RotateCcw, Activity, Sparkles, Landmark } from 'lucide-react';
 import { CityData, PolicyConfig } from '@/lib/types';
 import { calcAllScores } from '@/lib/scoring';
 import { runSimulation } from '@/lib/simulation';
@@ -112,16 +112,16 @@ export default function Home() {
       >
         <div className="flex items-center gap-3">
           <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'var(--accent-blue)', color: '#fff' }}
+            className="w-10 h-10 flex items-center justify-center"
+            style={{ color: 'var(--text-secondary)' }}
           >
-            <Map size={18} />
+            <Landmark size={26} />
           </div>
           <div>
-            <div className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            <div className="text-base greek-style font-bold tracking-widest leading-none mb-0.5" style={{ color: 'var(--text-primary)' }}>
               Polis AI
             </div>
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <div className="text-[10px] uppercase tracking-widest font-medium" style={{ color: 'var(--text-secondary)' }}>
               Urban Policy Simulator
             </div>
           </div>
@@ -224,7 +224,7 @@ export default function Home() {
             borderLeft: '1px solid var(--border)',
           }}
         >
-          <div className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+          <div className="text-xs font-bold greek-style tracking-widest mb-3 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
             <Sparkles size={12} />
             AI Advisor
           </div>

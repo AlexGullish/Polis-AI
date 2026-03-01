@@ -142,8 +142,8 @@ export default function SimulationGraph({ userResult, aiResult }: Props) {
     >
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            Multi-Year Projections
+          <div className="text-[10px] font-bold greek-style tracking-[0.2em]" style={{ color: 'var(--text-secondary)' }}>
+            Systemic Projections
           </div>
           {hasAI && (
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -167,8 +167,8 @@ export default function SimulationGraph({ userResult, aiResult }: Props) {
               key={t}
               className="text-xs px-3 py-1.5 rounded-md transition-colors capitalize"
               style={{
-                background: tab === t ? 'var(--accent-blue)' : 'var(--bg-base)',
-                color: tab === t ? '#fff' : 'var(--text-secondary)',
+                background: tab === t ? 'var(--bg-card-hover)' : 'var(--bg-base)',
+                color: tab === t ? 'var(--text-primary)' : 'var(--text-secondary)',
                 border: '1px solid var(--border)',
               }}
               onClick={() => switchTab(t)}

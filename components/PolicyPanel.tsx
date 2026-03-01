@@ -31,7 +31,7 @@ const CATEGORY_ICONS: Record<PolicyCategory, React.ReactNode> = {
 
 const CATEGORY_COLORS: Record<PolicyCategory, string> = {
   energy: 'var(--accent-yellow)',
-  transportation: 'var(--accent-blue)',
+  transportation: '#06b6d4', // Cyan instead of Blue
   governance: 'var(--accent-purple)',
   housing: '#f97316',
   healthcare: '#ec4899',
@@ -44,7 +44,7 @@ const CATEGORY_COLORS: Record<PolicyCategory, string> = {
 
 const CATEGORY_BG: Record<PolicyCategory, string> = {
   energy: 'rgba(245,158,11,0.12)',
-  transportation: 'rgba(59,130,246,0.12)',
+  transportation: 'rgba(6,182,212,0.12)',
   governance: 'rgba(139,92,246,0.12)',
   housing: 'rgba(249,115,22,0.12)',
   healthcare: 'rgba(236,72,153,0.12)',
@@ -265,11 +265,12 @@ export default function PolicyPanel({
 
   return (
     <div className="flex flex-col h-full">
+
       {/* Simulation horizon */}
-      <div className="px-1 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div className="px-1 pb-3 mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Projection horizon</span>
-          <span className="text-xs font-semibold tabular-nums" style={{ color: 'var(--accent-blue)' }}>
+          <span className="text-xs font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>
             {simulationYears} yr
           </span>
         </div>
@@ -280,7 +281,7 @@ export default function PolicyPanel({
           value={simulationYears}
           onChange={e => onYearsChange(Number(e.target.value))}
           className="w-full h-1"
-          style={{ accentColor: 'var(--accent-blue)' }}
+          style={{ accentColor: 'var(--text-secondary)' }}
         />
         <div className="flex justify-between text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
           <span>2yr</span><span>15yr</span>
@@ -353,7 +354,7 @@ export default function PolicyPanel({
           style={{ borderTop: '1px solid var(--border)', color: 'var(--text-muted)' }}
         >
           <span>{totalSelectedCount} polic{totalSelectedCount === 1 ? 'y' : 'ies'} selected</span>
-          <span style={{ color: 'var(--accent-blue)' }}>
+          <span style={{ color: 'var(--accent-yellow)' }}>
             ${selectedPolicies.reduce((s, p) => s + p.budgetPerYear, 0).toLocaleString()}M/yr total
           </span>
         </div>

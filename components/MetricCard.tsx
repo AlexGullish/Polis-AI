@@ -63,7 +63,7 @@ export default function MetricCard({ label, score, icon, color, pillar, delta, b
       <div className="flex items-start justify-between">
         <div>
           <div className="text-[var(--text-secondary)] mb-1">{icon}</div>
-          <div className="text-xs font-medium mt-1" style={{ color: 'var(--text-secondary)' }}>
+          <div className="text-[10px] font-bold mt-1 greek-style tracking-[0.15em] mb-0.5" style={{ color: 'var(--text-secondary)' }}>
             {label}
           </div>
           {delta !== undefined && delta !== 0 && (
