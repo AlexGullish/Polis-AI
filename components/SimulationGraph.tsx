@@ -31,7 +31,7 @@ const METRIC_SERIES = [
   { key: 'renewableEnergy', label: 'Renewable %', color: '#10b981' },
   { key: 'publicTransit', label: 'Transit %', color: '#3b82f6' },
   { key: 'publicTrust', label: 'Public Trust', color: '#8b5cf6' },
-  { key: 'debtRatio', label: 'Debt Ratio %', color: '#f59e0b' },
+  { key: 'debtRatio', label: 'Debt Ratio (% GDP)', color: '#f59e0b' },
 ];
 
 type Tab = 'scores' | 'metrics';
