@@ -109,8 +109,26 @@ export default function MetricCard({ label, score, icon, color, pillar, delta, b
         </div>
       )}
 
-      {/* Static formula weights when no simulation */}
-      {!showLiveDeltas && formula && (
+      {/* Show baseline values when no simulation is running */}
+      {!showLiveDeltas && submetrics && baseMetrics && (
+        <div className="space-y-1.5 pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+          {submetrics.map(sm => {
+            const val = baseMetrics[sm.key] as number | undefined;
+            if (val === undefined) return null;
+            return (
+              <div key={sm.key} className="flex items-center justify-between text-xs">
+                <span style={{ color: 'var(--text-muted)' }}>{sm.label}</span>
+                <span className="font-normal tabular-nums" style={{ color: 'var(--text-secondary)' }}>
+                  {val.toFixed(sm.key === 'co2PerCapita' ? 1 : 0)} {sm.unit}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Fallback to formula weights only if results and base metrics are missing (unlikely) */}
+      {!showLiveDeltas && formula && (!submetrics || !baseMetrics) && (
         <div className="space-y-1">
           {formula.map(f => (
             <div key={f.label} className="flex items-center justify-between text-xs">
