@@ -23,7 +23,7 @@
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/AlexGullish/Polis-AI.git
    cd Polis-AI
    ```
 
